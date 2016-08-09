@@ -2,12 +2,23 @@ package mgoauth
 
 import (
 	"gopkg.in/mgo.v2"
-	//"gopkg.in/mgo.v2/bson"
+	"gopkg.in/mgo.v2/bson"
+)
+
+const (
+	databaseName    = "users"
+	usersCollection = "users"
 )
 
 var (
 	sessionPool *mgo.Session
 )
+
+type User struct {
+	Id       bson.ObjectId `bson:"_id,omitempty"`
+	Name     string        `bson:"name"`
+	Password string        `bson:"password"`
+}
 
 func init() {
 	var err error
@@ -25,11 +36,27 @@ func (self *Storage) close() {
 }
 
 func (self *Storage) isValidUser(name string, password string) bool {
-	if name == "guest" && password == "guest123" {
+	users := self.session.DB(databaseName).C(usersCollection)
+	var count int
+	count, err := users.Find(bson.M{"name": name, "password": password}).Count()
+
+	if err != nil {
+		return false
+	}
+
+	if count >= 1 {
 		return true
 	} else {
 		return false
 	}
+}
+
+func (self *Storage) addUser(name string, password string) error {
+	user := &User{
+		Name:     name,
+		Password: password,
+	}
+	return self.session.DB(databaseName).C(usersCollection).Insert(user)
 }
 
 func newStorage() *Storage {
