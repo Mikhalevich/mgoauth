@@ -1,6 +1,7 @@
 package mgoauth
 
 import (
+	"crypto/sha1"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -15,9 +16,9 @@ var (
 )
 
 type User struct {
-	Id       bson.ObjectId `bson:"_id,omitempty"`
-	Name     string        `bson:"name"`
-	Password string        `bson:"password"`
+	Id       bson.ObjectId   `bson:"_id,omitempty"`
+	Name     string          `bson:"name"`
+	Password [sha1.Size]byte `bson:"password"`
 }
 
 func init() {
@@ -25,6 +26,10 @@ func init() {
 	if sessionPool, err = mgo.Dial("localhost"); err != nil {
 		panic(err)
 	}
+}
+
+func crypt(password string) [sha1.Size]byte {
+	return sha1.Sum([]byte(password))
 }
 
 type Storage struct {
@@ -38,7 +43,7 @@ func (self *Storage) close() {
 func (self *Storage) isValidUser(name string, password string) bool {
 	users := self.session.DB(databaseName).C(usersCollection)
 	var count int
-	count, err := users.Find(bson.M{"name": name, "password": password}).Count()
+	count, err := users.Find(bson.M{"name": name, "password": crypt(password)}).Count()
 
 	if err != nil {
 		return false
@@ -54,7 +59,7 @@ func (self *Storage) isValidUser(name string, password string) bool {
 func (self *Storage) addUser(name string, password string) error {
 	user := &User{
 		Name:     name,
-		Password: password,
+		Password: crypt(password),
 	}
 	return self.session.DB(databaseName).C(usersCollection).Insert(user)
 }
