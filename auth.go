@@ -5,11 +5,18 @@ import (
 	//"gopkg.in/mgo.v2/bson"
 	"html/template"
 	"net/http"
+	"path"
+	"runtime"
 	"time"
 )
 
+func templateAbsPath(templateName string) string {
+	_, filename, _, _ := runtime.Caller(0)
+	return path.Join(path.Dir(filename), "templates", templateName)
+}
+
 var (
-	authTemplate = template.Must(template.New("Auth").ParseFiles("templates/Login.html", "templates/Test.html"))
+	authTemplate = template.Must(template.New("Auth").ParseFiles(templateAbsPath("Login.html"), templateAbsPath("Test.html")))
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
