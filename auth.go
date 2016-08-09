@@ -1,8 +1,6 @@
 package mgoauth
 
 import (
-	//"gopkg.in/mgo.v2"
-	//"gopkg.in/mgo.v2/bson"
 	"html/template"
 	"net/http"
 	"path"
@@ -35,7 +33,10 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("name")
 	password := r.FormValue("password")
 
-	if username == "guest" && password == "guest123" {
+	storage := newStorage()
+	defer storage.close()
+
+	if storage.isValidUser(username, password) {
 		expire := time.Now().Add(5 * time.Minute)
 		cookie := http.Cookie{Name: "SessionID", Value: "signin", Expires: expire, HttpOnly: true}
 		http.SetCookie(w, &cookie)
