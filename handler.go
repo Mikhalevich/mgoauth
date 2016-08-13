@@ -17,22 +17,7 @@ var (
 	authTemplate = template.Must(template.New("Auth").ParseFiles(templateAbsPath("Login.html"), templateAbsPath("Test.html")))
 )
 
-func Login(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-		if err := authTemplate.ExecuteTemplate(w, "Login.html", nil); err != nil {
-			panic(err)
-		}
-
-	case "POST":
-		Auth(w, r)
-	}
-}
-
-func Auth(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("name")
-	password := r.FormValue("password")
-
+func auth(username, password string, w http.ResponseWriter) bool {
 	storage := newStorage()
 	defer storage.close()
 
@@ -40,9 +25,28 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		expire := time.Now().Add(5 * time.Minute)
 		cookie := http.Cookie{Name: "SessionID", Value: "signin", Expires: expire, HttpOnly: true}
 		http.SetCookie(w, &cookie)
-		http.Redirect(w, r, "/", http.StatusFound)
-	} else {
-		http.Redirect(w, r, "/login", http.StatusMovedPermanently)
+		return true
+	}
+
+	return false
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	var username string
+	var password string
+
+	if r.Method == "POST" {
+		username = r.FormValue("name")
+		password = r.FormValue("password")
+
+		if auth(username, password, w) {
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+	}
+
+	if err := authTemplate.ExecuteTemplate(w, "Login.html", nil); err != nil {
+		panic(err)
 	}
 }
 
