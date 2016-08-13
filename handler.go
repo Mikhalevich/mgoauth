@@ -17,6 +17,11 @@ var (
 	authTemplate = template.Must(template.New("Auth").ParseFiles(templateAbsPath("Login.html"), templateAbsPath("Test.html")))
 )
 
+type UserInfo struct {
+	Username string
+	Password string
+}
+
 func auth(username, password string, w http.ResponseWriter) bool {
 	storage := newStorage()
 	defer storage.close()
@@ -32,20 +37,19 @@ func auth(username, password string, w http.ResponseWriter) bool {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	var username string
-	var password string
+	var userInfo UserInfo
 
 	if r.Method == "POST" {
-		username = r.FormValue("name")
-		password = r.FormValue("password")
+		userInfo.Username = r.FormValue("name")
+		userInfo.Password = r.FormValue("password")
 
-		if auth(username, password, w) {
+		if auth(userInfo.Username, userInfo.Password, w) {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
 	}
 
-	if err := authTemplate.ExecuteTemplate(w, "Login.html", nil); err != nil {
+	if err := authTemplate.ExecuteTemplate(w, "Login.html", userInfo); err != nil {
 		panic(err)
 	}
 }
