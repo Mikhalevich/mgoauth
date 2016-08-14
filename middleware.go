@@ -12,7 +12,7 @@ func CheckAuth(next http.Handler) http.Handler {
 			authorized = true
 		}
 
-		if !authorized && r.URL.Path != "/login" {
+		if !authorized && r.URL.Path != "/login" && r.URL.Path != "/register" {
 			http.Redirect(w, r, "/login", http.StatusFound)
 		} else {
 			next.ServeHTTP(w, r)

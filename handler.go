@@ -14,7 +14,10 @@ func templateAbsPath(templateName string) string {
 }
 
 var (
-	authTemplate = template.Must(template.New("Auth").ParseFiles(templateAbsPath("Login.html"), templateAbsPath("Test.html")))
+	authTemplate = template.Must(template.New("Auth").ParseFiles(
+		templateAbsPath("Login.html"),
+		templateAbsPath("Test.html"),
+		templateAbsPath("Register.html")))
 )
 
 type UserInfo struct {
@@ -22,18 +25,10 @@ type UserInfo struct {
 	Password string
 }
 
-func auth(username, password string, w http.ResponseWriter) bool {
-	storage := newStorage()
-	defer storage.close()
-
-	if storage.isValidUser(username, password) {
-		expire := time.Now().Add(5 * time.Minute)
-		cookie := http.Cookie{Name: "SessionID", Value: "signin", Expires: expire, HttpOnly: true}
-		http.SetCookie(w, &cookie)
-		return true
-	}
-
-	return false
+func setUserCookie(w http.ResponseWriter) {
+	expire := time.Now().Add(5 * time.Minute)
+	cookie := http.Cookie{Name: "SessionID", Value: "signin", Expires: expire, HttpOnly: true}
+	http.SetCookie(w, &cookie)
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -43,13 +38,39 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		userInfo.Username = r.FormValue("name")
 		userInfo.Password = r.FormValue("password")
 
-		if auth(userInfo.Username, userInfo.Password, w) {
+		storage := newStorage()
+		defer storage.close()
+
+		if storage.isValidUser(userInfo.Username, userInfo.Password) {
+			setUserCookie(w)
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
 	}
 
 	if err := authTemplate.ExecuteTemplate(w, "Login.html", userInfo); err != nil {
+		panic(err)
+	}
+}
+
+func Register(w http.ResponseWriter, r *http.Request) {
+	var userInfo UserInfo
+
+	if r.Method == "POST" {
+		userInfo.Username = r.FormValue("name")
+		userInfo.Password = r.FormValue("password")
+
+		storage := newStorage()
+		defer storage.close()
+
+		if err := storage.addUser(userInfo.Username, userInfo.Password); err == nil {
+			setUserCookie(w)
+			http.Redirect(w, r, "/", http.StatusFound)
+			return
+		}
+	}
+
+	if err := authTemplate.ExecuteTemplate(w, "Register.html", userInfo); err != nil {
 		panic(err)
 	}
 }
