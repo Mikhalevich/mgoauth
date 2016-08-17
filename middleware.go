@@ -4,18 +4,22 @@ import (
 	"net/http"
 )
 
-func CheckAuth(next http.Handler) http.Handler {
+func CheckAuth(next http.Handler, role int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authorized := false
-		cookie, err := r.Cookie("SessionID")
-		if err == nil && cookie.Value == "signin" {
+		if role == EmptyRole {
 			authorized = true
+		} else {
+			cookie, err := r.Cookie("SessionID")
+			if err == nil && cookie.Value == "signin" {
+				authorized = true
+			}
 		}
 
-		if !authorized && r.URL.Path != "/login" && r.URL.Path != "/register" {
-			http.Redirect(w, r, "/login", http.StatusFound)
-		} else {
+		if authorized {
 			next.ServeHTTP(w, r)
+		} else {
+			http.Redirect(w, r, "/login", http.StatusFound)
 		}
 	})
 }

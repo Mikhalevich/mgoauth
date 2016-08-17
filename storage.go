@@ -9,6 +9,10 @@ import (
 const (
 	databaseName    = "users"
 	usersCollection = "users"
+
+	EmptyRole = iota
+	UserRole
+	AdminRole
 )
 
 var (
@@ -19,6 +23,7 @@ type User struct {
 	Id       bson.ObjectId   `bson:"_id,omitempty"`
 	Name     string          `bson:"name"`
 	Password [sha1.Size]byte `bson:"password"`
+	Role     int             `bson:"role"`
 }
 
 func init() {
@@ -56,10 +61,11 @@ func (self *Storage) isValidUser(name string, password string) bool {
 	}
 }
 
-func (self *Storage) addUser(name string, password string) error {
+func (self *Storage) addUser(name string, password string, role int) error {
 	user := &User{
 		Name:     name,
 		Password: crypt(password),
+		Role:     role,
 	}
 	return self.session.DB(databaseName).C(usersCollection).Insert(user)
 }

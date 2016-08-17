@@ -63,7 +63,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		storage := newStorage()
 		defer storage.close()
 
-		if err := storage.addUser(userInfo.Username, userInfo.Password); err == nil {
+		if err := storage.addUser(userInfo.Username, userInfo.Password, UserRole); err == nil {
 			setUserCookie(w)
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
@@ -76,6 +76,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
+	if err := authTemplate.ExecuteTemplate(w, "Test.html", nil); err != nil {
+		panic(err)
+	}
+}
+
+func AdminTest(w http.ResponseWriter, r *http.Request) {
 	if err := authTemplate.ExecuteTemplate(w, "Test.html", nil); err != nil {
 		panic(err)
 	}
