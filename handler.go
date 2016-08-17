@@ -25,9 +25,9 @@ type UserInfo struct {
 	Password string
 }
 
-func setUserCookie(w http.ResponseWriter) {
+func setUserCookie(w http.ResponseWriter, sessionId string) {
 	expire := time.Now().Add(5 * time.Minute)
-	cookie := http.Cookie{Name: "SessionID", Value: "signin", Expires: expire, HttpOnly: true}
+	cookie := http.Cookie{Name: "SessionID", Value: sessionId, Expires: expire, HttpOnly: true}
 	http.SetCookie(w, &cookie)
 }
 
@@ -41,8 +41,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		storage := newStorage()
 		defer storage.close()
 
-		if storage.isValidUser(userInfo.Username, userInfo.Password) {
-			setUserCookie(w)
+		userId := storage.userId(userInfo.Username, userInfo.Password)
+
+		if len(userId) > 0 {
+			setUserCookie(w, userId)
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
@@ -63,8 +65,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		storage := newStorage()
 		defer storage.close()
 
-		if err := storage.addUser(userInfo.Username, userInfo.Password, UserRole); err == nil {
-			setUserCookie(w)
+		if userId, err := storage.addUser(userInfo.Username, userInfo.Password, UserRole); err == nil {
+			setUserCookie(w, userId)
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}

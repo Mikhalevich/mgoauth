@@ -45,29 +45,32 @@ func (self *Storage) close() {
 	self.session.Close()
 }
 
-func (self *Storage) isValidUser(name string, password string) bool {
+func (self *Storage) userId(name string, password string) string {
 	users := self.session.DB(databaseName).C(usersCollection)
-	var count int
-	count, err := users.Find(bson.M{"name": name, "password": crypt(password)}).Count()
-
-	if err != nil {
-		return false
+	user := User{}
+	if err := users.Find(bson.M{"name": name, "password": crypt(password)}).One(&user); err != nil {
+		return ""
 	}
 
-	if count >= 1 {
-		return true
-	} else {
-		return false
-	}
+	return string(user.Id)
 }
 
-func (self *Storage) addUser(name string, password string, role int) error {
+func (self *Storage) addUser(name string, password string, role int) (string, error) {
 	user := &User{
 		Name:     name,
 		Password: crypt(password),
 		Role:     role,
 	}
-	return self.session.DB(databaseName).C(usersCollection).Insert(user)
+	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
+		return "", err
+	}
+
+	if err := self.session.DB(databaseName).C(usersCollection).Find(bson.M{"name": user.Name, "password": user.Password}).One(&user); err != nil {
+		return "", err
+	}
+
+	return string(user.Id), nil
+
 }
 
 func newStorage() *Storage {
