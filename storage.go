@@ -57,15 +57,13 @@ func (self *Storage) userId(name string, password string) string {
 
 func (self *Storage) addUser(name string, password string, role int) (string, error) {
 	user := &User{
+		Id:       bson.NewObjectId(),
 		Name:     name,
 		Password: crypt(password),
 		Role:     role,
 	}
-	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
-		return "", err
-	}
 
-	if err := self.session.DB(databaseName).C(usersCollection).Find(bson.M{"name": user.Name, "password": user.Password}).One(&user); err != nil {
+	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
 		return "", err
 	}
 

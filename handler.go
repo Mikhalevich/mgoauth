@@ -20,7 +20,7 @@ var (
 		templateAbsPath("Register.html")))
 )
 
-type UserInfo struct {
+type TemplateUserInfo struct {
 	Username string
 	Password string
 }
@@ -32,7 +32,7 @@ func setUserCookie(w http.ResponseWriter, sessionId string) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	var userInfo UserInfo
+	var userInfo TemplateUserInfo
 
 	if r.Method == "POST" {
 		userInfo.Username = r.FormValue("name")
@@ -56,7 +56,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	var userInfo UserInfo
+	var userInfo TemplateUserInfo
 
 	if r.Method == "POST" {
 		userInfo.Username = r.FormValue("name")
