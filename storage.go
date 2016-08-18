@@ -52,14 +52,14 @@ func (self *Storage) userId(name string, password string) string {
 		return ""
 	}
 
-	return string(user.Id)
+	return user.Id.Hex()
 }
 
 func (self *Storage) userById(id string) (User, error) {
 	users := self.session.DB(databaseName).C(usersCollection)
 	user := User{}
 
-	if err := users.FindId(id).One(&user); err != nil {
+	if err := users.FindId(bson.ObjectIdHex(id)).One(&user); err != nil {
 		return User{}, err
 	}
 
@@ -78,7 +78,7 @@ func (self *Storage) addUser(name string, password string, role int) (string, er
 		return "", err
 	}
 
-	return string(user.Id), nil
+	return user.Id.Hex(), nil
 }
 
 func newStorage() *Storage {
