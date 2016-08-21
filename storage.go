@@ -2,6 +2,7 @@ package mgoauth
 
 import (
 	"crypto/sha1"
+	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -31,6 +32,19 @@ func init() {
 	if sessionPool, err = mgo.Dial("localhost"); err != nil {
 		panic(err)
 	}
+
+	createIndexes(sessionPool)
+}
+
+func createIndexes(session *mgo.Session) {
+	index := mgo.Index{
+		Key:      []string{"name"},
+		Unique:   true,
+		DropDups: true,
+	}
+	if err := session.DB(databaseName).C(usersCollection).EnsureIndex(index); err != nil {
+		panic(err)
+	}
 }
 
 func crypt(password string) [sha1.Size]byte {
@@ -39,6 +53,14 @@ func crypt(password string) [sha1.Size]byte {
 
 type Storage struct {
 	session *mgo.Session
+}
+
+func newStorage() *Storage {
+	storage := &Storage{
+		session: sessionPool.Copy(),
+	}
+
+	return storage
 }
 
 func (self *Storage) close() {
@@ -75,16 +97,9 @@ func (self *Storage) addUser(name string, password string, role int) (string, er
 	}
 
 	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
+		fmt.Println(err)
 		return "", err
 	}
 
 	return user.Id.Hex(), nil
-}
-
-func newStorage() *Storage {
-	storage := &Storage{
-		session: sessionPool.Copy(),
-	}
-
-	return storage
 }
