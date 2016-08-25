@@ -126,10 +126,15 @@ func (self *Storage) addLoginRequest(name, remoteAddr string) error {
 
 	// try to find login request first
 	request := LoginRequest{}
-	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err != nil {
+	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
 		// request exists
 		request.LastRequest = time.Now().Unix()
-		request.Count = request.Count + 1
+
+		if request.Count > 3 {
+			request.Count = 1
+		} else {
+			request.Count = request.Count + 1
+		}
 
 		if err := requestCollection.Update(request, bson.M{"name": name, "remote_addr": remoteAddr}); err != nil {
 			return err
@@ -146,6 +151,19 @@ func (self *Storage) addLoginRequest(name, remoteAddr string) error {
 	}
 
 	return nil
+}
+
+func (self *Storage) isValidLoginRequest(name, remoteAddr string) bool {
+	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	request := LoginRequest{}
+	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
+		if request.Count >= 3 {
+			timeDelta := time.Now().Unix() - request.LastRequest
+			return timeDelta >= 60
+		}
+	}
+
+	return true
 }
 
 func (self *Storage) removeLoginRequest(name, remoteAddr string) error {

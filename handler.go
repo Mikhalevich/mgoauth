@@ -41,12 +41,16 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		storage := newStorage()
 		defer storage.close()
 
-		userId := storage.userId(userInfo.Username, userInfo.Password)
-
-		if len(userId) > 0 {
-			setUserCookie(w, userId)
-			http.Redirect(w, r, "/", http.StatusFound)
-			return
+		if storage.isValidLoginRequest(userInfo.Username, r.RemoteAddr) {
+			userId := storage.userId(userInfo.Username, userInfo.Password)
+			if len(userId) > 0 {
+				storage.removeLoginRequest(userInfo.Username, r.RemoteAddr)
+				setUserCookie(w, userId)
+				http.Redirect(w, r, "/", http.StatusFound)
+				return
+			} else {
+				storage.addLoginRequest(userInfo.Username, r.RemoteAddr)
+			}
 		}
 	}
 
