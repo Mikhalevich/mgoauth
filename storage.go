@@ -2,14 +2,15 @@ package mgoauth
 
 import (
 	"crypto/sha1"
-	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 const (
-	databaseName    = "users"
-	usersCollection = "users"
+	databaseName           = "users"
+	usersCollection        = "users"
+	loginRequestCollection = "login_request"
 
 	EmptyRole = iota
 	UserRole
@@ -27,6 +28,14 @@ type User struct {
 	Role     int             `bson:"role"`
 }
 
+type LoginRequest struct {
+	Id          bson.ObjectId `bson:"_id,omitempty"`
+	UserName    string        `bson:"name"`
+	RemoteAddr  string        `bson:"remote_addr"`
+	LastRequest int64         `bson:"last_request"`
+	Count       int           `bson:"count"`
+}
+
 func init() {
 	var err error
 	if sessionPool, err = mgo.Dial("localhost"); err != nil {
@@ -37,12 +46,21 @@ func init() {
 }
 
 func createIndexes(session *mgo.Session) {
-	index := mgo.Index{
+	userIndex := mgo.Index{
 		Key:      []string{"name"},
 		Unique:   true,
 		DropDups: true,
 	}
-	if err := session.DB(databaseName).C(usersCollection).EnsureIndex(index); err != nil {
+	if err := session.DB(databaseName).C(usersCollection).EnsureIndex(userIndex); err != nil {
+		panic(err)
+	}
+
+	loginRequestIndex := mgo.Index{
+		Key:      []string{"name", "remote_addr"},
+		Unique:   true,
+		DropDups: true,
+	}
+	if err := session.DB(databaseName).C(loginRequestCollection).EnsureIndex(loginRequestIndex); err != nil {
 		panic(err)
 	}
 }
@@ -97,9 +115,41 @@ func (self *Storage) addUser(name string, password string, role int) (string, er
 	}
 
 	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 
 	return user.Id.Hex(), nil
+}
+
+func (self *Storage) addLoginRequest(name, remoteAddr string) error {
+	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+
+	// try to find login request first
+	request := LoginRequest{}
+	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err != nil {
+		// request exists
+		request.LastRequest = time.Now().Unix()
+		request.Count = request.Count + 1
+
+		if err := requestCollection.Update(request, bson.M{"name": name, "remote_addr": remoteAddr}); err != nil {
+			return err
+		}
+	} else {
+		// new reqeust
+		request.UserName = name
+		request.RemoteAddr = remoteAddr
+		request.LastRequest = time.Now().Unix()
+		request.Count = 1
+		if err := requestCollection.Insert(request); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (self *Storage) removeLoginRequest(name, remoteAddr string) error {
+	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+
+	return requestCollection.Remove(bson.M{"name": name, "remote_addr": remoteAddr})
 }
