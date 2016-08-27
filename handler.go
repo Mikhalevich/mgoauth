@@ -1,11 +1,14 @@
 package mgoauth
 
 import (
+	"crypto/sha1"
 	"html/template"
 	"net/http"
 	"path"
 	"runtime"
 	"time"
+
+	"gopkg.in/mgo.v2/bson"
 )
 
 func templateAbsPath(templateName string) string {
@@ -25,6 +28,10 @@ type TemplateUserInfo struct {
 	Password string
 }
 
+func crypt(password string) [sha1.Size]byte {
+	return sha1.Sum([]byte(password))
+}
+
 func setUserCookie(w http.ResponseWriter, sessionId string) {
 	expire := time.Now().Add(5 * time.Minute)
 	cookie := http.Cookie{Name: "SessionID", Value: sessionId, Expires: expire, HttpOnly: true}
@@ -41,15 +48,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		storage := newStorage()
 		defer storage.close()
 
-		if storage.isValidRequest(userInfo.Username, r.RemoteAddr) {
-			userId := storage.userId(userInfo.Username, userInfo.Password)
-			if len(userId) > 0 {
-				storage.removeRequest(userInfo.Username, r.RemoteAddr)
+		if storage.IsAllowedRequest(userInfo.Username, r.RemoteAddr) {
+			if userId, err := storage.UserId(userInfo.Username, userInfo.Password); err != nil {
+				storage.AddRequest(userInfo.Username, r.RemoteAddr)
+			} else {
+				storage.RemoveRequest(userInfo.Username, r.RemoteAddr)
 				setUserCookie(w, userId)
 				http.Redirect(w, r, "/", http.StatusFound)
 				return
-			} else {
-				storage.addRequest(userInfo.Username, r.RemoteAddr)
 			}
 		}
 	}
@@ -69,8 +75,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		storage := newStorage()
 		defer storage.close()
 
-		if userId, err := storage.addUser(userInfo.Username, userInfo.Password, UserRole); err == nil {
-			setUserCookie(w, userId)
+		user := &User{
+			Id:       bson.NewObjectId(),
+			Name:     userInfo.Username,
+			Password: crypt(userInfo.Password),
+			Role:     UserRole,
+		}
+		if err := storage.AddUser(user); err == nil {
+			setUserCookie(w, user.Id.Hex())
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}

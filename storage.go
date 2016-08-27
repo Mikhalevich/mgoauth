@@ -1,7 +1,6 @@
 package mgoauth
 
 import (
-	"crypto/sha1"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"time"
@@ -11,30 +10,11 @@ const (
 	databaseName           = "auth_users"
 	usersCollection        = "users"
 	loginRequestCollection = "request"
-
-	EmptyRole = iota
-	UserRole
-	AdminRole
 )
 
 var (
 	sessionPool *mgo.Session
 )
-
-type User struct {
-	Id       bson.ObjectId   `bson:"_id,omitempty"`
-	Name     string          `bson:"name"`
-	Password [sha1.Size]byte `bson:"password"`
-	Role     int             `bson:"role"`
-}
-
-type LoginRequest struct {
-	Id          bson.ObjectId `bson:"_id,omitempty"`
-	UserName    string        `bson:"name"`
-	RemoteAddr  string        `bson:"remote_addr"`
-	LastRequest int64         `bson:"last_request"`
-	Count       int           `bson:"count"`
-}
 
 func init() {
 	var err error
@@ -42,34 +22,14 @@ func init() {
 		panic(err)
 	}
 
-	createIndexes(sessionPool)
-
 	storage := newStorage()
-	storage.clearLoginRequest()
-}
-
-func createIndexes(session *mgo.Session) {
-	userIndex := mgo.Index{
-		Key:      []string{"name"},
-		Unique:   true,
-		DropDups: true,
-	}
-	if err := session.DB(databaseName).C(usersCollection).EnsureIndex(userIndex); err != nil {
+	if err = storage.CreateIndexes(); err != nil {
 		panic(err)
 	}
 
-	loginRequestIndex := mgo.Index{
-		Key:      []string{"name", "remote_addr"},
-		Unique:   true,
-		DropDups: true,
-	}
-	if err := session.DB(databaseName).C(loginRequestCollection).EnsureIndex(loginRequestIndex); err != nil {
+	if err = storage.ClearTemporaryData(); err != nil {
 		panic(err)
 	}
-}
-
-func crypt(password string) [sha1.Size]byte {
-	return sha1.Sum([]byte(password))
 }
 
 type Storage struct {
@@ -88,17 +48,43 @@ func (self *Storage) close() {
 	self.session.Close()
 }
 
-func (self *Storage) userId(name string, password string) string {
+func (self *Storage) CreateIndexes() error {
+	userIndex := mgo.Index{
+		Key:      []string{"name"},
+		Unique:   true,
+		DropDups: true,
+	}
+	if err := self.session.DB(databaseName).C(usersCollection).EnsureIndex(userIndex); err != nil {
+		return err
+	}
+
+	loginRequestIndex := mgo.Index{
+		Key:      []string{"name", "remote_addr"},
+		Unique:   true,
+		DropDups: true,
+	}
+	if err := self.session.DB(databaseName).C(loginRequestCollection).EnsureIndex(loginRequestIndex); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (self *Storage) ClearTemporaryData() error {
+	return self.ClearRequests()
+}
+
+func (self *Storage) UserId(name, password string) (string, error) {
 	users := self.session.DB(databaseName).C(usersCollection)
 	user := User{}
 	if err := users.Find(bson.M{"name": name, "password": crypt(password)}).One(&user); err != nil {
-		return ""
+		return "", err
 	}
 
-	return user.Id.Hex()
+	return user.Id.Hex(), nil
 }
 
-func (self *Storage) userById(id string) (User, error) {
+func (self *Storage) UserById(id string) (User, error) {
 	users := self.session.DB(databaseName).C(usersCollection)
 	user := User{}
 
@@ -109,22 +95,15 @@ func (self *Storage) userById(id string) (User, error) {
 	return user, nil
 }
 
-func (self *Storage) addUser(name string, password string, role int) (string, error) {
-	user := &User{
-		Id:       bson.NewObjectId(),
-		Name:     name,
-		Password: crypt(password),
-		Role:     role,
-	}
-
+func (self *Storage) AddUser(user *User) error {
 	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
-		return "", err
+		return err
 	}
 
-	return user.Id.Hex(), nil
+	return nil
 }
 
-func (self *Storage) addRequest(name, remoteAddr string) error {
+func (self *Storage) AddRequest(name, remoteAddr string) error {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 
 	// try to find login request first
@@ -156,7 +135,19 @@ func (self *Storage) addRequest(name, remoteAddr string) error {
 	return nil
 }
 
-func (self *Storage) isValidRequest(name, remoteAddr string) bool {
+func (self *Storage) RemoveRequest(name, remoteAddr string) error {
+	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+
+	return requestCollection.Remove(bson.M{"name": name, "remote_addr": remoteAddr})
+}
+
+func (self *Storage) ClearRequests() error {
+	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	_, err := requestCollection.RemoveAll(bson.M{})
+	return err
+}
+
+func (self *Storage) IsAllowedRequest(name, remoteAddr string) bool {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 	request := LoginRequest{}
 	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
@@ -169,14 +160,6 @@ func (self *Storage) isValidRequest(name, remoteAddr string) bool {
 	return true
 }
 
-func (self *Storage) removeRequest(name, remoteAddr string) error {
-	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
-
-	return requestCollection.Remove(bson.M{"name": name, "remote_addr": remoteAddr})
-}
-
-func (self *Storage) clearLoginRequest() error {
-	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
-	_, err := requestCollection.RemoveAll(bson.M{})
-	return err
+func (self *Storage) ResetCounter(name, remoteAddr string) {
+	//todo
 }

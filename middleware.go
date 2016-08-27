@@ -16,7 +16,7 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 				storage := newStorage()
 				defer storage.close()
 
-				if user, err := storage.userById(userId); err == nil {
+				if user, err := storage.UserById(userId); err == nil {
 					if user.Role >= role {
 						authorized = true
 					}
