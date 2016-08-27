@@ -13,8 +13,8 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 			if cookie, err := r.Cookie("SessionID"); err == nil {
 				userId := cookie.Value
 
-				storage := newStorage()
-				defer storage.close()
+				storage := NewStorage()
+				defer storage.Close()
 
 				if user, err := storage.UserById(userId); err == nil {
 					if user.Role >= role {

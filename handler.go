@@ -45,8 +45,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		userInfo.Username = r.FormValue("name")
 		userInfo.Password = r.FormValue("password")
 
-		storage := newStorage()
-		defer storage.close()
+		storage := NewStorage()
+		defer storage.Close()
 
 		if storage.IsAllowedRequest(userInfo.Username, r.RemoteAddr) {
 			if userId, err := storage.UserId(userInfo.Username, userInfo.Password); err != nil {
@@ -72,8 +72,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		userInfo.Username = r.FormValue("name")
 		userInfo.Password = r.FormValue("password")
 
-		storage := newStorage()
-		defer storage.close()
+		storage := NewStorage()
+		defer storage.Close()
 
 		user := &User{
 			Id:       bson.NewObjectId(),

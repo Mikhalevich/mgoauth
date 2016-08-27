@@ -22,7 +22,7 @@ func init() {
 		panic(err)
 	}
 
-	storage := newStorage()
+	storage := NewStorage()
 	if err = storage.CreateIndexes(); err != nil {
 		panic(err)
 	}
@@ -36,7 +36,7 @@ type Storage struct {
 	session *mgo.Session
 }
 
-func newStorage() *Storage {
+func NewStorage() *Storage {
 	storage := &Storage{
 		session: sessionPool.Copy(),
 	}
@@ -44,7 +44,7 @@ func newStorage() *Storage {
 	return storage
 }
 
-func (self *Storage) close() {
+func (self *Storage) Close() {
 	self.session.Close()
 }
 
