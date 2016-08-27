@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	databaseName           = "users"
+	databaseName           = "auth_users"
 	usersCollection        = "users"
-	loginRequestCollection = "login_request"
+	loginRequestCollection = "request"
 
 	EmptyRole = iota
 	UserRole
