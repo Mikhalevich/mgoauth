@@ -33,8 +33,8 @@ func crypt(password string) [sha1.Size]byte {
 }
 
 func setUserCookie(w http.ResponseWriter, sessionId string) {
-	expire := time.Now().Add(5 * time.Minute)
-	cookie := http.Cookie{Name: "SessionID", Value: sessionId, Expires: expire, HttpOnly: true}
+	expire := time.Now().Add(SessionExpirePeriod * time.Second)
+	cookie := http.Cookie{Name: SessionIdName, Value: sessionId, Expires: expire, HttpOnly: true}
 	http.SetCookie(w, &cookie)
 }
 

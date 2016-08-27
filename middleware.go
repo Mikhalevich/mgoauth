@@ -10,7 +10,7 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 		if role == EmptyRole {
 			authorized = true
 		} else {
-			if cookie, err := r.Cookie("SessionID"); err == nil {
+			if cookie, err := r.Cookie(SessionIdName); err == nil {
 				userId := cookie.Value
 
 				storage := NewStorage()

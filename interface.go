@@ -55,3 +55,10 @@ type LoginRequestStorage interface {
 	ClearRequests() error
 	IsAllowedRequest(name, remoteAddr string) bool
 }
+
+// user handlers
+
+const (
+	SessionIdName       = "SessionID"
+	SessionExpirePeriod = 5 * 60 // sec
+)
