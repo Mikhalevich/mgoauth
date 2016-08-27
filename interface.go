@@ -38,6 +38,7 @@ type UserStorage interface {
 
 const (
 	MaxRequestCount = 3
+	WaitingPeriod   = 60 // sec
 )
 
 type LoginRequest struct {
@@ -53,5 +54,4 @@ type LoginRequestStorage interface {
 	RemoveRequest(name, remoteAddr string) error
 	ClearRequests() error
 	IsAllowedRequest(name, remoteAddr string) bool
-	ResetCounter(name, remoteAddr string) error
 }
