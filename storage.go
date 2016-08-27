@@ -43,6 +43,9 @@ func init() {
 	}
 
 	createIndexes(sessionPool)
+
+	storage := newStorage()
+	storage.clearLoginRequest()
 }
 
 func createIndexes(session *mgo.Session) {
@@ -136,7 +139,7 @@ func (self *Storage) addLoginRequest(name, remoteAddr string) error {
 			request.Count = request.Count + 1
 		}
 
-		if err := requestCollection.Update(request, bson.M{"name": name, "remote_addr": remoteAddr}); err != nil {
+		if err := requestCollection.Update(bson.M{"name": name, "remote_addr": remoteAddr}, request); err != nil {
 			return err
 		}
 	} else {
@@ -170,4 +173,10 @@ func (self *Storage) removeLoginRequest(name, remoteAddr string) error {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 
 	return requestCollection.Remove(bson.M{"name": name, "remote_addr": remoteAddr})
+}
+
+func (self *Storage) clearLoginRequest() error {
+	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	_, err := requestCollection.RemoveAll(bson.M{})
+	return err
 }
