@@ -124,7 +124,7 @@ func (self *Storage) addUser(name string, password string, role int) (string, er
 	return user.Id.Hex(), nil
 }
 
-func (self *Storage) addLoginRequest(name, remoteAddr string) error {
+func (self *Storage) addRequest(name, remoteAddr string) error {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 
 	// try to find login request first
@@ -156,7 +156,7 @@ func (self *Storage) addLoginRequest(name, remoteAddr string) error {
 	return nil
 }
 
-func (self *Storage) isValidLoginRequest(name, remoteAddr string) bool {
+func (self *Storage) isValidRequest(name, remoteAddr string) bool {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 	request := LoginRequest{}
 	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
@@ -169,7 +169,7 @@ func (self *Storage) isValidLoginRequest(name, remoteAddr string) bool {
 	return true
 }
 
-func (self *Storage) removeLoginRequest(name, remoteAddr string) error {
+func (self *Storage) removeRequest(name, remoteAddr string) error {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 
 	return requestCollection.Remove(bson.M{"name": name, "remote_addr": remoteAddr})
