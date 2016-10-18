@@ -26,6 +26,7 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 						log.Println("Invalid user role")
 					} else if userPriority >= pagePriority {
 						authorized = true
+						setCurrentUser(r, user)
 					}
 				}
 			}
