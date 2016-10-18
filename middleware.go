@@ -1,13 +1,17 @@
 package mgoauth
 
 import (
+	"log"
 	"net/http"
 )
 
 func CheckAuth(next http.Handler, role int) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authorized := false
-		if role == EmptyRole {
+		pagePriority, ok := RolePriority[role]
+		if !ok {
+			log.Println("Invalid handler role")
+		} else if role == EmptyRole {
 			authorized = true
 		} else {
 			if cookie, err := r.Cookie(SessionIdName); err == nil {
@@ -17,7 +21,10 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 				defer storage.Close()
 
 				if user, err := storage.UserById(userId); err == nil {
-					if user.Role >= role {
+					userPriority, ok := RolePriority[user.Role]
+					if !ok {
+						log.Println("Invalid user role")
+					} else if userPriority >= pagePriority {
 						authorized = true
 					}
 				}

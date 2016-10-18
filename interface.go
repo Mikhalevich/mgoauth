@@ -19,6 +19,14 @@ const (
 	AdminRole
 )
 
+var (
+	RolePriority = map[int]int{
+		EmptyRole: 10,
+		UserRole:  20,
+		AdminRole: 30,
+	}
+)
+
 type User struct {
 	Id             bson.ObjectId   `bson:"_id,omitempty"`
 	Name           string          `bson:"name"`
