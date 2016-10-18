@@ -23,11 +23,11 @@ func init() {
 	}
 
 	storage := NewStorage()
-	if err = storage.CreateIndexes(); err != nil {
+	if err = storage.createIndexes(); err != nil {
 		panic(err)
 	}
 
-	if err = storage.ClearTemporaryData(); err != nil {
+	if err = storage.clearTemporaryData(); err != nil {
 		panic(err)
 	}
 }
@@ -48,7 +48,7 @@ func (self *Storage) Close() {
 	self.session.Close()
 }
 
-func (self *Storage) CreateIndexes() error {
+func (self *Storage) createIndexes() error {
 	userIndex := mgo.Index{
 		Key:      []string{"name"},
 		Unique:   true,
@@ -70,7 +70,7 @@ func (self *Storage) CreateIndexes() error {
 	return nil
 }
 
-func (self *Storage) ClearTemporaryData() error {
+func (self *Storage) clearTemporaryData() error {
 	return self.ClearRequests()
 }
 

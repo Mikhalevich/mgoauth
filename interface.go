@@ -8,8 +8,6 @@ import (
 // connection
 
 type Connectioner interface {
-	CreateIndexes() error
-	ClearTemporaryData() error
 	Close()
 }
 
