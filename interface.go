@@ -22,10 +22,11 @@ const (
 )
 
 type User struct {
-	Id       bson.ObjectId   `bson:"_id,omitempty"`
-	Name     string          `bson:"name"`
-	Password [sha1.Size]byte `bson:"password"`
-	Role     int             `bson:"role"`
+	Id             bson.ObjectId   `bson:"_id,omitempty"`
+	Name           string          `bson:"name"`
+	Password       [sha1.Size]byte `bson:"password"`
+	Role           int             `bson:"role"`
+	ActivationCode string          `bson:"activation_code"`
 }
 
 type UserStorage interface {
@@ -37,8 +38,8 @@ type UserStorage interface {
 // request storage
 
 const (
-	MaxRequestCount = 3
-	WaitingPeriod   = 60 // sec
+	LoginRequestMaxCount      = 3
+	LoginRequestWaitingPeriod = 60 // sec
 )
 
 type LoginRequest struct {

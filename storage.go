@@ -146,9 +146,9 @@ func (self *Storage) IsAllowedRequest(name, remoteAddr string) bool {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 	request := LoginRequest{}
 	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
-		if request.Count >= MaxRequestCount {
+		if request.Count >= LoginRequestMaxCount {
 			timeDelta := time.Now().Unix() - request.LastRequest
-			allowed := timeDelta >= WaitingPeriod
+			allowed := timeDelta >= LoginRequestWaitingPeriod
 
 			if allowed {
 				self.resetCounter(request)
