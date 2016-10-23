@@ -37,8 +37,11 @@ var (
 type User struct {
 	Id             bson.ObjectId   `bson:"_id,omitempty"`
 	Name           string          `bson:"name"`
+	Email          string          `bson:"email"`
 	Password       [sha1.Size]byte `bson:"password"`
 	Role           int             `bson:"role"`
+	Registered     int64           `bson:"registered"`
+	LastLogin      int64           `bson:"last_login"`
 	ActivationCode string          `bson:"activation_code"`
 }
 
