@@ -5,6 +5,13 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// common
+
+const (
+	UrlRootPage  = "/"
+	UrlLoginPage = "/login"
+)
+
 // connection
 
 type Connectioner interface {

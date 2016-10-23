@@ -54,7 +54,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			} else {
 				storage.RemoveRequest(userInfo.Username, r.RemoteAddr)
 				setUserCookie(w, userId)
-				http.Redirect(w, r, "/", http.StatusFound)
+				http.Redirect(w, r, UrlRootPage, http.StatusFound)
 				return
 			}
 		}
@@ -83,7 +83,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := storage.AddUser(user); err == nil {
 			setUserCookie(w, user.Id.Hex())
-			http.Redirect(w, r, "/", http.StatusFound)
+			http.Redirect(w, r, UrlRootPage, http.StatusFound)
 			return
 		}
 	}

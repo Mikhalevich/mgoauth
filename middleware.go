@@ -35,7 +35,7 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 		if authorized {
 			next.ServeHTTP(w, r)
 		} else {
-			http.Redirect(w, r, "/login", http.StatusFound)
+			http.Redirect(w, r, UrlLoginPage, http.StatusFound)
 		}
 	})
 }
