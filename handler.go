@@ -26,6 +26,7 @@ var (
 type TemplateUserInfo struct {
 	Username string
 	Password string
+	Email    string
 }
 
 func crypt(password string) [sha1.Size]byte {
@@ -71,15 +72,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		userInfo.Username = r.FormValue("name")
 		userInfo.Password = r.FormValue("password")
+		userInfo.Email = r.FormValue("email")
 
 		storage := NewStorage()
 		defer storage.Close()
 
 		user := &User{
-			Id:       bson.NewObjectId(),
-			Name:     userInfo.Username,
-			Password: crypt(userInfo.Password),
-			Role:     UserRole,
+			Id:         bson.NewObjectId(),
+			Name:       userInfo.Username,
+			Email:      userInfo.Email,
+			Password:   crypt(userInfo.Password),
+			Role:       UserRole,
+			Registered: time.Now().Unix(),
+			LastLogin:  time.Now().Unix(),
 		}
 		if err := storage.AddUser(user); err == nil {
 			setUserCookie(w, user.Id.Hex())

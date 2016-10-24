@@ -77,7 +77,20 @@ func (self *Storage) clearTemporaryData() error {
 func (self *Storage) UserId(name, password string) (string, error) {
 	users := self.session.DB(databaseName).C(usersCollection)
 	user := User{}
-	if err := users.Find(bson.M{"name": name, "password": crypt(password)}).One(&user); err != nil {
+
+	cryptedPassword := crypt(password)
+	query := users.Find(bson.M{"name": name, "password": cryptedPassword})
+	rows, err := query.Count()
+	if err != nil {
+		return "", err
+	}
+
+	if rows <= 0 {
+		query = users.Find(bson.M{"email": name, "password": cryptedPassword})
+	}
+
+	err = query.One(&user)
+	if err != nil {
 		return "", err
 	}
 
