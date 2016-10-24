@@ -49,6 +49,7 @@ type UserStorage interface {
 	UserId(name, passwd string) (string, error)
 	UserById(id string) (User, error)
 	AddUser(user User) error
+	AddLoginTime(id string, loginTime int64) error
 }
 
 // request storage

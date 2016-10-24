@@ -3,6 +3,7 @@ package mgoauth
 import (
 	"crypto/sha1"
 	"html/template"
+	"log"
 	"net/http"
 	"path"
 	"runtime"
@@ -53,7 +54,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			if userId, err := storage.UserId(userInfo.Username, userInfo.Password); err != nil {
 				storage.AddRequest(userInfo.Username, r.RemoteAddr)
 			} else {
-				storage.RemoveRequest(userInfo.Username, r.RemoteAddr)
+				if err := storage.RemoveRequest(userInfo.Username, r.RemoteAddr); err != nil {
+					log.Println(err)
+				}
+				if err := storage.AddLoginTime(userId, time.Now().Unix()); err != nil {
+					log.Println(err)
+				}
 				setUserCookie(w, userId)
 				http.Redirect(w, r, UrlRootPage, http.StatusFound)
 				return

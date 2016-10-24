@@ -116,6 +116,12 @@ func (self *Storage) AddUser(user *User) error {
 	return nil
 }
 
+func (self *Storage) AddLoginTime(id string, loginTime int64) error {
+	users := self.session.DB(databaseName).C(usersCollection)
+
+	return users.UpdateId(bson.ObjectIdHex(id), bson.M{"$set": bson.M{"last_login": loginTime}})
+}
+
 func (self *Storage) AddRequest(name, remoteAddr string) error {
 	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
 
