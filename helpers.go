@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/context"
 	"log"
 	"net/http"
+	"net/smtp"
 )
 
 func setCurrentUser(request *http.Request, user User) {
@@ -26,4 +27,13 @@ func CurrentUser(request *http.Request) (User, bool) {
 	}
 
 	return user, true
+}
+
+func sendRegistrationMail(emailTo string, validationCode string) error {
+	auth := smtp.PlainAuth("", EmailFrom, EmailPassword, EmailHost)
+	msg := "From: " + EmailFrom + "\r\n" +
+		"To: " + emailTo + "\r\n" +
+		"Subject: Registration mail" + "\r\n\r\n" +
+		validationCode + "\r\n"
+	return smtp.SendMail(EmailHost+":"+EmailPort, auth, EmailFrom, []string{emailTo}, []byte(msg))
 }

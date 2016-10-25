@@ -83,19 +83,36 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		storage := NewStorage()
 		defer storage.Close()
 
+		activationCode := ""
+		if UseEmailValidation {
+			activationCode = "1234567890"
+		}
+
 		user := &User{
-			Id:         bson.NewObjectId(),
-			Name:       userInfo.Username,
-			Email:      userInfo.Email,
-			Password:   crypt(userInfo.Password),
-			Role:       UserRole,
-			Registered: time.Now().Unix(),
-			LastLogin:  time.Now().Unix(),
+			Id:             bson.NewObjectId(),
+			Name:           userInfo.Username,
+			Email:          userInfo.Email,
+			Password:       crypt(userInfo.Password),
+			Role:           UserRole,
+			Registered:     time.Now().Unix(),
+			LastLogin:      time.Now().Unix(),
+			ActivationCode: activationCode,
 		}
 		if err := storage.AddUser(user); err == nil {
-			setUserCookie(w, user.Id.Hex())
-			http.Redirect(w, r, UrlRootPage, http.StatusFound)
-			return
+			if UseEmailValidation {
+				err = sendRegistrationMail(userInfo.Email, activationCode)
+				if err != nil {
+					log.Println(err)
+				} else {
+					// todo: redirect to notification about sending mail page
+					http.Redirect(w, r, UrlRootPage, http.StatusFound)
+					return
+				}
+			} else {
+				setUserCookie(w, user.Id.Hex())
+				http.Redirect(w, r, UrlRootPage, http.StatusFound)
+				return
+			}
 		}
 	}
 

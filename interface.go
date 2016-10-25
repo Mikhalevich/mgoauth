@@ -10,6 +10,12 @@ import (
 const (
 	UrlRootPage  = "/"
 	UrlLoginPage = "/login"
+
+	UseEmailValidation = true
+	EmailFrom          = "noreplymgoauth@gmail.com"
+	EmailPassword      = "mgoauth123"
+	EmailHost          = "smtp.gmail.com"
+	EmailPort          = "587"
 )
 
 // connection
