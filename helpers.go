@@ -1,6 +1,7 @@
 package mgoauth
 
 import (
+	"bytes"
 	"github.com/gorilla/context"
 	"log"
 	"net/http"
@@ -29,11 +30,22 @@ func CurrentUser(request *http.Request) (User, bool) {
 	return user, true
 }
 
-func sendRegistrationMail(emailTo string, validationCode string) error {
+func sendRegistrationMail(name string, emailTo string, validationCode string) error {
+	var body bytes.Buffer
+	templateParams := &TemplateEmailValidation{
+		Name: name,
+		Link: validationCode,
+	}
+	if err := Templates.ExecuteTemplate(&body, "EmailValidation.html", templateParams); err != nil {
+		return err
+	}
+
 	auth := smtp.PlainAuth("", EmailFrom, EmailPassword, EmailHost)
 	msg := "From: " + EmailFrom + "\r\n" +
 		"To: " + emailTo + "\r\n" +
+		"MIME-Version: 1.0" + "\r\n" +
+		"Content-type: text/html" + "\r\n" +
 		"Subject: Registration mail" + "\r\n\r\n" +
-		validationCode + "\r\n"
+		body.String() + "\r\n"
 	return smtp.SendMail(EmailHost+":"+EmailPort, auth, EmailFrom, []string{emailTo}, []byte(msg))
 }

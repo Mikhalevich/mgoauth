@@ -2,33 +2,12 @@ package mgoauth
 
 import (
 	"crypto/sha1"
-	"html/template"
 	"log"
 	"net/http"
-	"path"
-	"runtime"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
 )
-
-func templateAbsPath(templateName string) string {
-	_, filename, _, _ := runtime.Caller(0)
-	return path.Join(path.Dir(filename), "templates", templateName)
-}
-
-var (
-	authTemplate = template.Must(template.New("Auth").ParseFiles(
-		templateAbsPath("Login.html"),
-		templateAbsPath("Test.html"),
-		templateAbsPath("Register.html")))
-)
-
-type TemplateUserInfo struct {
-	Username string
-	Password string
-	Email    string
-}
 
 func crypt(password string) [sha1.Size]byte {
 	return sha1.Sum([]byte(password))
@@ -67,7 +46,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := authTemplate.ExecuteTemplate(w, "Login.html", userInfo); err != nil {
+	if err := Templates.ExecuteTemplate(w, "Login.html", userInfo); err != nil {
 		panic(err)
 	}
 }
@@ -100,7 +79,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := storage.AddUser(user); err == nil {
 			if UseEmailValidation {
-				err = sendRegistrationMail(userInfo.Email, activationCode)
+				err = sendRegistrationMail(userInfo.Username, userInfo.Email, activationCode)
 				if err != nil {
 					log.Println(err)
 				} else {
@@ -116,19 +95,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := authTemplate.ExecuteTemplate(w, "Register.html", userInfo); err != nil {
+	if err := Templates.ExecuteTemplate(w, "Register.html", userInfo); err != nil {
 		panic(err)
 	}
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
-	if err := authTemplate.ExecuteTemplate(w, "Test.html", nil); err != nil {
+	if err := Templates.ExecuteTemplate(w, "Test.html", nil); err != nil {
 		panic(err)
 	}
 }
 
 func AdminTest(w http.ResponseWriter, r *http.Request) {
-	if err := authTemplate.ExecuteTemplate(w, "Test.html", nil); err != nil {
+	if err := Templates.ExecuteTemplate(w, "Test.html", nil); err != nil {
 		panic(err)
 	}
 }
