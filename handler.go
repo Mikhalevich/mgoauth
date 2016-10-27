@@ -64,7 +64,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		activationCode := ""
 		if UseEmailValidation {
-			activationCode = "1234567890"
+			activationCode = generateRandomId()
 		}
 
 		user := &User{
@@ -98,6 +98,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	if err := Templates.ExecuteTemplate(w, "Register.html", userInfo); err != nil {
 		panic(err)
 	}
+}
+
+func EmailValidation(w http.ResponseWriter, r *http.Request) {
+	email := r.URL.Query().Get("email")
+	code := r.URL.Query().Get("code")
+
+	log.Println("email = %s, code = %s", email, code)
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {

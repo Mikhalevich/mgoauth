@@ -8,8 +8,10 @@ import (
 // common
 
 const (
-	UrlRootPage  = "/"
-	UrlLoginPage = "/login"
+	UrlBase                = "http://localhost:8080"
+	UrlRootPage            = "/"
+	UrlLoginPage           = "/login"
+	UrlEmailValidationPage = UrlBase + "/validation"
 
 	UseEmailValidation = true
 	EmailFrom          = "noreplymgoauth@gmail.com"

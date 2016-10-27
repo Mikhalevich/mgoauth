@@ -2,10 +2,18 @@ package mgoauth
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/gorilla/context"
+	"html"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/smtp"
+)
+
+const (
+	randomIdLenght  = 10
+	randomIdSymbols = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 func setCurrentUser(request *http.Request, user User) {
@@ -32,9 +40,10 @@ func CurrentUser(request *http.Request) (User, bool) {
 
 func sendRegistrationMail(name string, emailTo string, validationCode string) error {
 	var body bytes.Buffer
+	link := fmt.Sprintf("%s?email=%s&code=%s", UrlEmailValidationPage, html.EscapeString(emailTo), html.EscapeString(validationCode))
 	templateParams := &TemplateEmailValidation{
 		Name: name,
-		Link: validationCode,
+		Link: link,
 	}
 	if err := Templates.ExecuteTemplate(&body, "EmailValidation.html", templateParams); err != nil {
 		return err
@@ -48,4 +57,15 @@ func sendRegistrationMail(name string, emailTo string, validationCode string) er
 		"Subject: Registration mail" + "\r\n\r\n" +
 		body.String() + "\r\n"
 	return smtp.SendMail(EmailHost+":"+EmailPort, auth, EmailFrom, []string{emailTo}, []byte(msg))
+}
+
+func generateRandomId() string {
+	bytes := make([]byte, randomIdLenght)
+	rand.Read(bytes)
+
+	for index, value := range bytes {
+		bytes[index] = randomIdSymbols[value%byte(len(randomIdSymbols))]
+	}
+
+	return string(bytes)
 }
