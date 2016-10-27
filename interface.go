@@ -11,6 +11,7 @@ const (
 	UrlBase                = "http://localhost:8080"
 	UrlRootPage            = "/"
 	UrlLoginPage           = "/login"
+	UrlRegisterPage        = "/register"
 	UrlEmailValidationPage = UrlBase + "/validation"
 
 	UseEmailValidation = true
@@ -58,6 +59,7 @@ type UserStorage interface {
 	UserById(id string) (User, error)
 	AddUser(user User) error
 	AddLoginTime(id string, loginTime int64) error
+	ResetActivationCode(email string, code string) bool
 }
 
 // request storage

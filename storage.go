@@ -94,6 +94,12 @@ func (self *Storage) UserId(name, password string) (string, error) {
 		return "", err
 	}
 
+	if UseEmailValidation {
+		if len(user.ActivationCode) > 0 {
+			return "", nil
+		}
+	}
+
 	return user.Id.Hex(), nil
 }
 
@@ -120,6 +126,27 @@ func (self *Storage) AddLoginTime(id string, loginTime int64) error {
 	users := self.session.DB(databaseName).C(usersCollection)
 
 	return users.UpdateId(bson.ObjectIdHex(id), bson.M{"$set": bson.M{"last_login": loginTime}})
+}
+
+func (self *Storage) ResetActivationCode(email string, code string) bool {
+	users := self.session.DB(databaseName).C(usersCollection)
+
+	query := users.Find(bson.M{"email": email, "activation_code": code})
+	rows, err := query.Count()
+	if err != nil {
+		return false
+	}
+
+	if rows <= 0 {
+		return false
+	}
+
+	err = users.Update(bson.M{"email": email, "activation_code": code}, bson.M{"$set": bson.M{"activation_code": ""}})
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 func (self *Storage) AddRequest(name, remoteAddr string) error {

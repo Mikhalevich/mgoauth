@@ -36,6 +36,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 				if err := storage.RemoveRequest(userInfo.Username, r.RemoteAddr); err != nil {
 					log.Println(err)
 				}
+
+				if len(userId) <= 0 {
+					// email not verified
+					http.Redirect(w, r, UrlRegisterPage, http.StatusFound)
+					return
+				}
+
 				if err := storage.AddLoginTime(userId, time.Now().Unix()); err != nil {
 					log.Println(err)
 				}
@@ -101,10 +108,22 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func EmailValidation(w http.ResponseWriter, r *http.Request) {
+	if !UseEmailValidation {
+		// todo: print error
+		return
+	}
+
 	email := r.URL.Query().Get("email")
 	code := r.URL.Query().Get("code")
 
-	log.Println("email = %s, code = %s", email, code)
+	storage := NewStorage()
+	defer storage.Close()
+
+	if storage.ResetActivationCode(email, code) {
+		http.Redirect(w, r, UrlRootPage, http.StatusFound)
+	} else {
+		http.Redirect(w, r, UrlRegisterPage, http.StatusFound)
+	}
 }
 
 func Test(w http.ResponseWriter, r *http.Request) {
