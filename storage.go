@@ -74,33 +74,27 @@ func (self *Storage) clearTemporaryData() error {
 	return self.ClearRequests()
 }
 
-func (self *Storage) UserId(name, password string) (string, error) {
-	users := self.session.DB(databaseName).C(usersCollection)
+func (self *Storage) UserByNameAndPassword(name, password string) (User, error) {
+	usersCollection := self.session.DB(databaseName).C(usersCollection)
 	user := User{}
 
 	cryptedPassword := crypt(password)
-	query := users.Find(bson.M{"name": name, "password": cryptedPassword})
+	query := usersCollection.Find(bson.M{"name": name, "password": cryptedPassword})
 	rows, err := query.Count()
 	if err != nil {
-		return "", err
+		return User{}, err
 	}
 
 	if rows <= 0 {
-		query = users.Find(bson.M{"email": name, "password": cryptedPassword})
+		query = usersCollection.Find(bson.M{"email": name, "password": cryptedPassword})
 	}
 
 	err = query.One(&user)
 	if err != nil {
-		return "", err
+		return User{}, err
 	}
 
-	if UseEmailValidation {
-		if len(user.ActivationCode) > 0 {
-			return "", nil
-		}
-	}
-
-	return user.Id.Hex(), nil
+	return user, nil
 }
 
 func (self *Storage) UserById(id string) (User, error) {

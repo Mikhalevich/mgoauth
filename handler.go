@@ -30,23 +30,23 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		defer storage.Close()
 
 		if storage.IsAllowedRequest(userInfo.Username, r.RemoteAddr) {
-			if userId, err := storage.UserId(userInfo.Username, userInfo.Password); err != nil {
+			if user, err := storage.UserByNameAndPassword(userInfo.Username, userInfo.Password); err != nil {
 				storage.AddRequest(userInfo.Username, r.RemoteAddr)
 			} else {
 				if err := storage.RemoveRequest(userInfo.Username, r.RemoteAddr); err != nil {
 					log.Println(err)
 				}
 
-				if len(userId) <= 0 {
+				if UseEmailValidation && len(user.ActivationCode) > 0 {
 					// email not verified
 					http.Redirect(w, r, UrlRegisterPage, http.StatusFound)
 					return
 				}
 
-				if err := storage.AddLoginTime(userId, time.Now().Unix()); err != nil {
+				if err := storage.AddLoginTime(user.Id.Hex(), time.Now().Unix()); err != nil {
 					log.Println(err)
 				}
-				setUserCookie(w, userId)
+				setUserCookie(w, user.Id.Hex())
 				http.Redirect(w, r, UrlRootPage, http.StatusFound)
 				return
 			}
