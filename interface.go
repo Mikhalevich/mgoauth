@@ -2,6 +2,7 @@ package mgoauth
 
 import (
 	"crypto/sha1"
+	"errors"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -43,24 +44,42 @@ var (
 	}
 )
 
+type TypeId bson.ObjectId
+
+func NewTypeId() TypeId {
+	return TypeId(bson.NewObjectId())
+}
+
+func TypeIdFromHex(id string) (TypeId, error) {
+	if bson.IsObjectIdHex(id) {
+		return TypeId(bson.ObjectIdHex(id)), nil
+	} else {
+		return "", errors.New("Invalid type id hex string")
+	}
+}
+
+func (self TypeId) Hex() string {
+	return bson.ObjectId(self).Hex()
+}
+
 type TypePassword [sha1.Size]byte
 
 type User struct {
-	Id             bson.ObjectId `bson:"_id,omitempty"`
-	Name           string        `bson:"name"`
-	Email          string        `bson:"email"`
-	Password       TypePassword  `bson:"password"`
-	Role           int           `bson:"role"`
-	Registered     int64         `bson:"registered"`
-	LastLogin      int64         `bson:"last_login"`
-	ActivationCode string        `bson:"activation_code"`
+	Id             TypeId       `bson:"_id,omitempty"`
+	Name           string       `bson:"name"`
+	Email          string       `bson:"email"`
+	Password       TypePassword `bson:"password"`
+	Role           int          `bson:"role"`
+	Registered     int64        `bson:"registered"`
+	LastLogin      int64        `bson:"last_login"`
+	ActivationCode string       `bson:"activation_code"`
 }
 
 type UserStorage interface {
 	UserByNameAndPassword(name string, password TypePassword) (User, error)
-	UserById(id string) (User, error)
+	UserById(id TypeId) (User, error)
 	AddUser(user User) error
-	AddLoginTime(id string, loginTime int64) error
+	AddLoginTime(id TypeId, loginTime int64) error
 	ResetActivationCode(email string, code string) bool
 }
 
@@ -72,11 +91,11 @@ const (
 )
 
 type LoginRequest struct {
-	Id          bson.ObjectId `bson:"_id,omitempty"`
-	UserName    string        `bson:"name"`
-	RemoteAddr  string        `bson:"remote_addr"`
-	LastRequest int64         `bson:"last_request"`
-	Count       int           `bson:"count"`
+	Id          TypeId `bson:"_id,omitempty"`
+	UserName    string `bson:"name"`
+	RemoteAddr  string `bson:"remote_addr"`
+	LastRequest int64  `bson:"last_request"`
+	Count       int    `bson:"count"`
 }
 
 type LoginRequestStorage interface {

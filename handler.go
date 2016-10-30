@@ -4,8 +4,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 func setUserCookie(w http.ResponseWriter, sessionId string) {
@@ -38,7 +36,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				if err := storage.AddLoginTime(user.Id.Hex(), time.Now().Unix()); err != nil {
+				if err := storage.AddLoginTime(user.Id, time.Now().Unix()); err != nil {
 					log.Println(err)
 				}
 				setUserCookie(w, user.Id.Hex())
@@ -70,7 +68,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 
 		user := &User{
-			Id:             bson.NewObjectId(),
+			Id:             NewTypeId(),
 			Name:           userInfo.Username,
 			Email:          userInfo.Email,
 			Password:       crypt(userInfo.Password),
