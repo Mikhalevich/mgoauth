@@ -1,17 +1,12 @@
 package mgoauth
 
 import (
-	"crypto/sha1"
 	"log"
 	"net/http"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
 )
-
-func crypt(password string) [sha1.Size]byte {
-	return sha1.Sum([]byte(password))
-}
 
 func setUserCookie(w http.ResponseWriter, sessionId string) {
 	expire := time.Now().Add(SessionExpirePeriod * time.Second)
@@ -30,7 +25,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		defer storage.Close()
 
 		if storage.IsAllowedRequest(userInfo.Username, r.RemoteAddr) {
-			if user, err := storage.UserByNameAndPassword(userInfo.Username, userInfo.Password); err != nil {
+			if user, err := storage.UserByNameAndPassword(userInfo.Username, crypt(userInfo.Password)); err != nil {
 				storage.AddRequest(userInfo.Username, r.RemoteAddr)
 			} else {
 				if err := storage.RemoveRequest(userInfo.Username, r.RemoteAddr); err != nil {

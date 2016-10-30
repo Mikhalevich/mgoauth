@@ -74,19 +74,18 @@ func (self *Storage) clearTemporaryData() error {
 	return self.ClearRequests()
 }
 
-func (self *Storage) UserByNameAndPassword(name, password string) (User, error) {
+func (self *Storage) UserByNameAndPassword(name string, password TypePassword) (User, error) {
 	usersCollection := self.session.DB(databaseName).C(usersCollection)
 	user := User{}
 
-	cryptedPassword := crypt(password)
-	query := usersCollection.Find(bson.M{"name": name, "password": cryptedPassword})
+	query := usersCollection.Find(bson.M{"name": name, "password": password})
 	rows, err := query.Count()
 	if err != nil {
 		return User{}, err
 	}
 
 	if rows <= 0 {
-		query = usersCollection.Find(bson.M{"email": name, "password": cryptedPassword})
+		query = usersCollection.Find(bson.M{"email": name, "password": password})
 	}
 
 	err = query.One(&user)

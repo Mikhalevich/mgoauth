@@ -2,6 +2,7 @@ package mgoauth
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"github.com/gorilla/context"
 	"html"
@@ -68,4 +69,8 @@ func generateRandomId() string {
 	}
 
 	return string(bytes)
+}
+
+func crypt(password string) [sha1.Size]byte {
+	return sha1.Sum([]byte(password))
 }

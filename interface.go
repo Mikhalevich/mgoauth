@@ -43,19 +43,21 @@ var (
 	}
 )
 
+type TypePassword [sha1.Size]byte
+
 type User struct {
-	Id             bson.ObjectId   `bson:"_id,omitempty"`
-	Name           string          `bson:"name"`
-	Email          string          `bson:"email"`
-	Password       [sha1.Size]byte `bson:"password"`
-	Role           int             `bson:"role"`
-	Registered     int64           `bson:"registered"`
-	LastLogin      int64           `bson:"last_login"`
-	ActivationCode string          `bson:"activation_code"`
+	Id             bson.ObjectId `bson:"_id,omitempty"`
+	Name           string        `bson:"name"`
+	Email          string        `bson:"email"`
+	Password       TypePassword  `bson:"password"`
+	Role           int           `bson:"role"`
+	Registered     int64         `bson:"registered"`
+	LastLogin      int64         `bson:"last_login"`
+	ActivationCode string        `bson:"activation_code"`
 }
 
 type UserStorage interface {
-	UserByNameAndPassword(name, passwd string) (User, error)
+	UserByNameAndPassword(name string, password TypePassword) (User, error)
 	UserById(id string) (User, error)
 	AddUser(user User) error
 	AddLoginTime(id string, loginTime int64) error
