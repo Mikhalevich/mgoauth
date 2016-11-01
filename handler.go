@@ -64,7 +64,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		activationCode := ""
 		if UseEmailValidation {
-			activationCode = generateRandomId()
+			activationCode = generateRandomId(10)
 		}
 
 		user := &User{

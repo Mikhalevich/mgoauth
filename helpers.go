@@ -2,19 +2,15 @@ package mgoauth
 
 import (
 	"bytes"
+	"crypto/rand"
 	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
 	"github.com/gorilla/context"
 	"html"
 	"log"
-	"math/rand"
 	"net/http"
 	"net/smtp"
-)
-
-const (
-	randomIdLenght  = 10
-	randomIdSymbols = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 func setCurrentUser(request *http.Request, user User) {
@@ -60,15 +56,11 @@ func sendRegistrationMail(name string, emailTo string, validationCode string) er
 	return smtp.SendMail(EmailHost+":"+EmailPort, auth, EmailFrom, []string{emailTo}, []byte(msg))
 }
 
-func generateRandomId() string {
-	bytes := make([]byte, randomIdLenght)
+func generateRandomId(size int) string {
+	bytes := make([]byte, size)
 	rand.Read(bytes)
 
-	for index, value := range bytes {
-		bytes[index] = randomIdSymbols[value%byte(len(randomIdSymbols))]
-	}
-
-	return string(bytes)
+	return base64.URLEncoding.EncodeToString(bytes)
 }
 
 func crypt(password string) [sha1.Size]byte {
