@@ -3,6 +3,7 @@ package mgoauth
 import (
 	"log"
 	"net/http"
+	"time"
 )
 
 func CheckAuth(next http.Handler, role int) http.Handler {
@@ -23,9 +24,15 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 					userPriority, ok := RolePriority[user.Role]
 					if !ok {
 						log.Println("Invalid user role")
-					} else if userPriority >= pagePriority {
-						authorized = true
-						setCurrentUser(r, user)
+					} else if userPriority < pagePriority {
+						log.Println("Not allower for current user")
+					} else {
+						if user.SessionExpires < time.Now().Unix() {
+							log.Println("Session was expired")
+						} else {
+							authorized = true
+							setCurrentUser(r, user)
+						}
 					}
 				}
 			}
