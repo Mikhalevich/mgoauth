@@ -15,19 +15,17 @@ func CheckAuth(next http.Handler, role int) http.Handler {
 			authorized = true
 		} else {
 			if cookie, err := r.Cookie(SessionIdName); err == nil {
-				userId, err := TypeIdFromHex(cookie.Value)
-				if err == nil {
-					storage := NewStorage()
-					defer storage.Close()
+				sessionId := cookie.Value
+				storage := NewStorage()
+				defer storage.Close()
 
-					if user, err := storage.UserById(userId); err == nil {
-						userPriority, ok := RolePriority[user.Role]
-						if !ok {
-							log.Println("Invalid user role")
-						} else if userPriority >= pagePriority {
-							authorized = true
-							setCurrentUser(r, user)
-						}
+				if user, err := storage.UserBySessionId(sessionId); err == nil {
+					userPriority, ok := RolePriority[user.Role]
+					if !ok {
+						log.Println("Invalid user role")
+					} else if userPriority >= pagePriority {
+						authorized = true
+						setCurrentUser(r, user)
 					}
 				}
 			}

@@ -36,12 +36,16 @@ func Login(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				if err := storage.AddLoginTime(user.Id, time.Now().Unix()); err != nil {
+				sessionId := generateRandomId(32)
+				currentTime := time.Now().Unix()
+				if err := storage.UpdateLoginInfo(user.Id, currentTime, sessionId, currentTime+SessionExpirePeriod); err != nil {
 					log.Println(err)
+					log.Println(user.Id)
+				} else {
+					setUserCookie(w, sessionId)
+					http.Redirect(w, r, UrlRootPage, http.StatusFound)
+					return
 				}
-				setUserCookie(w, user.Id.Hex())
-				http.Redirect(w, r, UrlRootPage, http.StatusFound)
-				return
 			}
 		}
 	}
@@ -63,19 +67,27 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		defer storage.Close()
 
 		activationCode := ""
+		sessionId := ""
+		var sessionExpires int64 = 0
+		var loginTime int64 = 0
 		if UseEmailValidation {
 			activationCode = generateRandomId(10)
+		} else {
+			sessionId = generateRandomId(32)
+			sessionExpires = time.Now().Unix() + SessionExpirePeriod
+			loginTime = time.Now().Unix()
 		}
 
 		user := &User{
-			Id:             NewTypeId(),
 			Name:           userInfo.Username,
 			Email:          userInfo.Email,
 			Password:       crypt(userInfo.Password),
 			Role:           UserRole,
 			Registered:     time.Now().Unix(),
-			LastLogin:      time.Now().Unix(),
+			LastLogin:      loginTime,
 			ActivationCode: activationCode,
+			SessionId:      sessionId,
+			SessionExpires: sessionExpires,
 		}
 		if err := storage.AddUser(user); err == nil {
 			if UseEmailValidation {
@@ -88,7 +100,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else {
-				setUserCookie(w, user.Id.Hex())
+				setUserCookie(w, sessionId)
 				http.Redirect(w, r, UrlRootPage, http.StatusFound)
 				return
 			}

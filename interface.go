@@ -73,13 +73,16 @@ type User struct {
 	Registered     int64        `bson:"registered"`
 	LastLogin      int64        `bson:"last_login"`
 	ActivationCode string       `bson:"activation_code"`
+	SessionId      string       `bson:"session_id"`
+	SessionExpires int64        `bson:"session_expires"`
 }
 
 type UserStorage interface {
 	UserByNameAndPassword(name string, password TypePassword) (User, error)
 	UserById(id TypeId) (User, error)
+	UserBySessionId(sessionId string) (User, error)
 	AddUser(user User) error
-	AddLoginTime(id TypeId, loginTime int64) error
+	UpdateLoginInfo(id TypeId, loginTime int64, sessionId string, expires int64) error
 	ResetActivationCode(email string, code string) bool
 }
 

@@ -107,6 +107,17 @@ func (self *Storage) UserById(id TypeId) (User, error) {
 	return user, nil
 }
 
+func (self *Storage) UserBySessionId(sessionId string) (User, error) {
+	users := self.session.DB(databaseName).C(usersCollection)
+	user := User{}
+
+	if err := users.Find(bson.M{"session_id": sessionId}).One(&user); err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+}
+
 func (self *Storage) AddUser(user *User) error {
 	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
 		return err
@@ -115,10 +126,10 @@ func (self *Storage) AddUser(user *User) error {
 	return nil
 }
 
-func (self *Storage) AddLoginTime(id TypeId, loginTime int64) error {
-	usersCollection := self.session.DB(databaseName).C(usersCollection)
+func (self *Storage) UpdateLoginInfo(id TypeId, loginTime int64, sessionId string, expires int64) error {
+	users := self.session.DB(databaseName).C(usersCollection)
 
-	return usersCollection.UpdateId(id, bson.M{"$set": bson.M{"last_login": loginTime}})
+	return users.UpdateId(bson.ObjectId(id), bson.M{"$set": bson.M{"last_login": loginTime, "session_id": sessionId, "session_expires": expires}})
 }
 
 func (self *Storage) ResetActivationCode(email string, code string) bool {
