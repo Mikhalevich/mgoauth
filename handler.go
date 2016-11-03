@@ -14,6 +14,15 @@ func setUserCookie(w http.ResponseWriter, sessionId string) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	var userInfo TemplateUserInfo
+	renderTemplate := true
+
+	defer func() {
+		if renderTemplate {
+			if err := Templates.ExecuteTemplate(w, "Login.html", userInfo); err != nil {
+				log.Println(err)
+			}
+		}
+	}()
 
 	if r.Method == "POST" {
 		userInfo.Username = r.FormValue("name")
@@ -22,36 +31,42 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		storage := NewStorage()
 		defer storage.Close()
 
-		if storage.IsAllowedRequest(userInfo.Username, r.RemoteAddr) {
-			if user, err := storage.UserByNameAndPassword(userInfo.Username, crypt(userInfo.Password)); err != nil {
-				storage.AddRequest(userInfo.Username, r.RemoteAddr)
-			} else {
-				if err := storage.RemoveRequest(userInfo.Username, r.RemoteAddr); err != nil {
-					log.Println(err)
-				}
-
-				if UseEmailValidation && len(user.ActivationCode) > 0 {
-					// email not verified
-					http.Redirect(w, r, UrlRegisterPage, http.StatusFound)
-					return
-				}
-
-				sessionId := generateRandomId(32)
-				currentTime := time.Now().Unix()
-				if err := storage.UpdateLoginInfo(user.Id, currentTime, sessionId, currentTime+SessionExpirePeriod); err != nil {
-					log.Println(err)
-					log.Println(user.Id)
-				} else {
-					setUserCookie(w, sessionId)
-					http.Redirect(w, r, UrlRootPage, http.StatusFound)
-					return
-				}
-			}
+		if !storage.IsAllowedRequest(userInfo.Username, r.RemoteAddr) {
+			log.Println("Request is not allowed")
+			return
 		}
-	}
 
-	if err := Templates.ExecuteTemplate(w, "Login.html", userInfo); err != nil {
-		log.Println(err)
+		user, err := storage.UserByNameAndPassword(userInfo.Username, crypt(userInfo.Password))
+		if err != nil {
+			log.Println("Invalid username or password", err)
+			storage.AddRequest(userInfo.Username, r.RemoteAddr)
+			return
+		}
+
+		err = storage.RemoveRequest(userInfo.Username, r.RemoteAddr)
+		if err != nil {
+			log.Println("Unable to remove request", err)
+			// continue programm execution
+		}
+
+		if UseEmailValidation && len(user.ActivationCode) > 0 {
+			log.Println("Email not validated")
+			renderTemplate = false
+			http.Redirect(w, r, UrlRegisterPage, http.StatusFound)
+			return
+		}
+
+		sessionId := generateRandomId(32)
+		currentTime := time.Now().Unix()
+		err = storage.UpdateLoginInfo(user.Id, currentTime, sessionId, currentTime+SessionExpirePeriod)
+		if err != nil {
+			log.Println("Unable to update last login info", err)
+		} else {
+			renderTemplate = false
+			setUserCookie(w, sessionId)
+			http.Redirect(w, r, UrlRootPage, http.StatusFound)
+			return
+		}
 	}
 }
 
