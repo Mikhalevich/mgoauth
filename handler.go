@@ -72,6 +72,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	var userInfo TemplateUserInfo
+	renderTemplate := true
+
+	defer func() {
+		if renderTemplate {
+			if err := Templates.ExecuteTemplate(w, "Register.html", userInfo); err != nil {
+				log.Println(err)
+			}
+		}
+	}()
 
 	if r.Method == "POST" {
 		userInfo.Username = r.FormValue("name")
@@ -104,26 +113,29 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			SessionId:      sessionId,
 			SessionExpires: sessionExpires,
 		}
-		if err := storage.AddUser(user); err == nil {
-			if UseEmailValidation {
-				err = sendRegistrationMail(userInfo.Username, userInfo.Email, activationCode)
-				if err != nil {
-					log.Println(err)
-				} else {
-					// todo: redirect to notification about sending mail page
-					http.Redirect(w, r, UrlRootPage, http.StatusFound)
-					return
-				}
-			} else {
-				setUserCookie(w, sessionId)
-				http.Redirect(w, r, UrlRootPage, http.StatusFound)
-				return
-			}
-		}
-	}
 
-	if err := Templates.ExecuteTemplate(w, "Register.html", userInfo); err != nil {
-		log.Println(err)
+		err := storage.AddUser(user)
+		if err != nil {
+			log.Println("Unable to add user: ", err)
+			return
+		}
+
+		if UseEmailValidation {
+			err = sendRegistrationMail(userInfo.Username, userInfo.Email, activationCode)
+			if err != nil {
+				log.Println(err)
+			} else {
+				renderTemplate = false
+				// todo: redirect to notification about sending mail page
+				http.Redirect(w, r, UrlRootPage, http.StatusFound)
+			}
+			return
+		} else {
+			renderTemplate = false
+			setUserCookie(w, sessionId)
+			http.Redirect(w, r, UrlRootPage, http.StatusFound)
+			return
+		}
 	}
 }
 
