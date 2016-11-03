@@ -51,7 +51,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := Templates.ExecuteTemplate(w, "Login.html", userInfo); err != nil {
-		panic(err)
+		log.Println(err)
 	}
 }
 
@@ -108,7 +108,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := Templates.ExecuteTemplate(w, "Register.html", userInfo); err != nil {
-		panic(err)
+		log.Println(err)
 	}
 }
 
@@ -133,12 +133,12 @@ func EmailValidation(w http.ResponseWriter, r *http.Request) {
 
 func Test(w http.ResponseWriter, r *http.Request) {
 	if err := Templates.ExecuteTemplate(w, "Test.html", nil); err != nil {
-		panic(err)
+		log.Println(err)
 	}
 }
 
 func AdminTest(w http.ResponseWriter, r *http.Request) {
 	if err := Templates.ExecuteTemplate(w, "Test.html", nil); err != nil {
-		panic(err)
+		log.Println(err)
 	}
 }
