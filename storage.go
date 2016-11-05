@@ -180,6 +180,16 @@ func (self *Storage) AddRequest(name, remoteAddr string) error {
 	return nil
 }
 
+func (self *Storage) GetRequest(name, remoteAddr string) (LoginRequest, error) {
+	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
+	request := LoginRequest{}
+	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err != nil {
+		return LoginRequest{}, err
+	}
+
+	return request, nil
+}
+
 func (self *Storage) RemoveRequest(name, remoteAddr string) error {
 	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
 
@@ -192,25 +202,7 @@ func (self *Storage) ClearRequests() error {
 	return err
 }
 
-func (self *Storage) IsAllowedRequest(name, remoteAddr string) bool {
-	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
-	request := LoginRequest{}
-	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
-		if request.Count >= LoginRequestMaxCount {
-			timeDelta := time.Now().Unix() - request.LastRequest
-			allowed := timeDelta >= LoginRequestWaitingPeriod
-
-			if allowed {
-				self.resetCounter(request)
-			}
-			return allowed
-		}
-	}
-
-	return true
-}
-
-func (self *Storage) resetCounter(request LoginRequest) error {
+func (self *Storage) ResetRequestCounter(request LoginRequest) error {
 	request.Count = 1
 	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
 	return requestCollection.Update(bson.M{"name": request.UserName, "remote_addr": request.RemoteAddr}, request)

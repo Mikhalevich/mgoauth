@@ -103,9 +103,10 @@ type LoginRequest struct {
 
 type LoginRequestStorage interface {
 	AddRequest(name, remoteAddr string) error
+	GetRequest(name, remoteAddr string) (LoginRequest, error)
 	RemoveRequest(name, remoteAddr string) error
 	ClearRequests() error
-	IsAllowedRequest(name, remoteAddr string) bool
+	ResetRequestCounter(request LoginRequest) error
 }
 
 // user handlers

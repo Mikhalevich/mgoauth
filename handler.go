@@ -31,9 +31,19 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		storage := NewStorage()
 		defer storage.Close()
 
-		if !storage.IsAllowedRequest(userInfo.Username, r.RemoteAddr) {
-			log.Println("Request is not allowed")
-			return
+		loginRequest, err := storage.GetRequest(userInfo.Username, r.RemoteAddr)
+		if err == nil {
+			if loginRequest.Count >= LoginRequestMaxCount {
+				timeDelta := time.Now().Unix() - loginRequest.LastRequest
+				allowed := timeDelta >= LoginRequestWaitingPeriod
+
+				if allowed {
+					storage.ResetRequestCounter(loginRequest)
+				} else {
+					log.Println("Request is not allowed")
+					return
+				}
+			}
 		}
 
 		user, err := storage.UserByNameAndPassword(userInfo.Username, crypt(userInfo.Password))
