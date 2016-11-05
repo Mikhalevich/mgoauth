@@ -8,8 +8,8 @@ import (
 
 const (
 	databaseName           = "auth_users"
-	usersCollection        = "users"
-	loginRequestCollection = "request"
+	CollectionUsers        = "users"
+	CollectionLoginRequest = "request"
 )
 
 var (
@@ -54,7 +54,7 @@ func (self *Storage) createIndexes() error {
 		Unique:   true,
 		DropDups: true,
 	}
-	if err := self.session.DB(databaseName).C(usersCollection).EnsureIndex(userIndex); err != nil {
+	if err := self.session.DB(databaseName).C(CollectionUsers).EnsureIndex(userIndex); err != nil {
 		return err
 	}
 
@@ -63,7 +63,7 @@ func (self *Storage) createIndexes() error {
 		Unique:   true,
 		DropDups: true,
 	}
-	if err := self.session.DB(databaseName).C(loginRequestCollection).EnsureIndex(loginRequestIndex); err != nil {
+	if err := self.session.DB(databaseName).C(CollectionLoginRequest).EnsureIndex(loginRequestIndex); err != nil {
 		return err
 	}
 
@@ -75,7 +75,7 @@ func (self *Storage) clearTemporaryData() error {
 }
 
 func (self *Storage) UserByNameAndPassword(name string, password TypePassword) (User, error) {
-	usersCollection := self.session.DB(databaseName).C(usersCollection)
+	usersCollection := self.session.DB(databaseName).C(CollectionUsers)
 	user := User{}
 
 	query := usersCollection.Find(bson.M{"name": name, "password": password})
@@ -97,7 +97,7 @@ func (self *Storage) UserByNameAndPassword(name string, password TypePassword) (
 }
 
 func (self *Storage) UserById(id TypeId) (User, error) {
-	usersCollection := self.session.DB(databaseName).C(usersCollection)
+	usersCollection := self.session.DB(databaseName).C(CollectionUsers)
 	user := User{}
 
 	if err := usersCollection.FindId(id).One(&user); err != nil {
@@ -108,7 +108,7 @@ func (self *Storage) UserById(id TypeId) (User, error) {
 }
 
 func (self *Storage) UserBySessionId(sessionId string) (User, error) {
-	users := self.session.DB(databaseName).C(usersCollection)
+	users := self.session.DB(databaseName).C(CollectionUsers)
 	user := User{}
 
 	if err := users.Find(bson.M{"session_id": sessionId}).One(&user); err != nil {
@@ -119,7 +119,7 @@ func (self *Storage) UserBySessionId(sessionId string) (User, error) {
 }
 
 func (self *Storage) AddUser(user *User) error {
-	if err := self.session.DB(databaseName).C(usersCollection).Insert(user); err != nil {
+	if err := self.session.DB(databaseName).C(CollectionUsers).Insert(user); err != nil {
 		return err
 	}
 
@@ -127,13 +127,13 @@ func (self *Storage) AddUser(user *User) error {
 }
 
 func (self *Storage) UpdateLoginInfo(id TypeId, loginTime int64, sessionId string, expires int64) error {
-	users := self.session.DB(databaseName).C(usersCollection)
+	users := self.session.DB(databaseName).C(CollectionUsers)
 
 	return users.UpdateId(bson.ObjectId(id), bson.M{"$set": bson.M{"last_login": loginTime, "session_id": sessionId, "session_expires": expires}})
 }
 
 func (self *Storage) ResetActivationCode(email string, code string) bool {
-	users := self.session.DB(databaseName).C(usersCollection)
+	users := self.session.DB(databaseName).C(CollectionUsers)
 
 	query := users.Find(bson.M{"email": email, "activation_code": code})
 	rows, err := query.Count()
@@ -154,7 +154,7 @@ func (self *Storage) ResetActivationCode(email string, code string) bool {
 }
 
 func (self *Storage) AddRequest(name, remoteAddr string) error {
-	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
 
 	// try to find login request first
 	request := LoginRequest{}
@@ -181,19 +181,19 @@ func (self *Storage) AddRequest(name, remoteAddr string) error {
 }
 
 func (self *Storage) RemoveRequest(name, remoteAddr string) error {
-	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
 
 	return requestCollection.Remove(bson.M{"name": name, "remote_addr": remoteAddr})
 }
 
 func (self *Storage) ClearRequests() error {
-	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
 	_, err := requestCollection.RemoveAll(bson.M{})
 	return err
 }
 
 func (self *Storage) IsAllowedRequest(name, remoteAddr string) bool {
-	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
 	request := LoginRequest{}
 	if err := requestCollection.Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
 		if request.Count >= LoginRequestMaxCount {
@@ -212,6 +212,6 @@ func (self *Storage) IsAllowedRequest(name, remoteAddr string) bool {
 
 func (self *Storage) resetCounter(request LoginRequest) error {
 	request.Count = 1
-	requestCollection := self.session.DB(databaseName).C(loginRequestCollection)
+	requestCollection := self.session.DB(databaseName).C(CollectionLoginRequest)
 	return requestCollection.Update(bson.M{"name": request.UserName, "remote_addr": request.RemoteAddr}, request)
 }
