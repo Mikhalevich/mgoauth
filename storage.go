@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	databaseName           = "auth_users"
+	DatabaseName           = "auth_users"
+	DatabaseHost           = "localhost"
 	CollectionUsers        = "users"
 	CollectionLoginRequest = "request"
 )
@@ -18,7 +19,7 @@ var (
 
 func init() {
 	var err error
-	if sessionPool, err = mgo.Dial("localhost"); err != nil {
+	if sessionPool, err = mgo.Dial(DatabaseHost); err != nil {
 		panic(err)
 	}
 
@@ -45,11 +46,11 @@ func NewStorage() *Storage {
 }
 
 func (self *Storage) cUsers() *mgo.Collection {
-	return self.session.DB(databaseName).C(CollectionUsers)
+	return self.session.DB(DatabaseName).C(CollectionUsers)
 }
 
 func (self *Storage) cLoginRequest() *mgo.Collection {
-	return self.session.DB(databaseName).C(CollectionLoginRequest)
+	return self.session.DB(DatabaseName).C(CollectionLoginRequest)
 }
 
 func (self *Storage) Close() {
