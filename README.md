@@ -1,7 +1,7 @@
 # web authentication on golang using mongodb
 ## example
-```
 
+```go
 package main
 
 import (
@@ -77,6 +77,4 @@ func main() {
 	router := NewRouter()
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
-
-
 ```
