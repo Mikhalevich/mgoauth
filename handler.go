@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -44,7 +45,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		storage := NewStorage()
 		defer storage.Close()
 
-		loginRequest, err := storage.GetRequest(userInfo.Username, r.RemoteAddr)
+		userHost := r.RemoteAddr[:strings.Index(r.RemoteAddr, ":")]
+		loginRequest, err := storage.GetRequest(userInfo.Username, userHost)
 		if err == nil {
 			if loginRequest.Count >= LoginRequestMaxCount {
 				timeDelta := time.Now().Unix() - loginRequest.LastRequest
@@ -62,14 +64,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		user, err := storage.UserByNameAndPassword(userInfo.Username, crypt(userInfo.Password))
 		if err != nil {
 			userInfo.Errors["common"] = "Invalid username or password"
-			err = storage.AddRequest(userInfo.Username, r.RemoteAddr)
+			err = storage.AddRequest(userInfo.Username, userHost)
 			if err != nil {
 				log.Println("Error in add request: ", err)
 			}
 			return
 		}
 
-		err = storage.RemoveRequest(userInfo.Username, r.RemoteAddr)
+		err = storage.RemoveRequest(userInfo.Username, userHost)
 		if err != nil {
 			log.Println("Unable to remove request", err)
 			// continue programm execution
