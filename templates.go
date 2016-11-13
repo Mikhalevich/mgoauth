@@ -19,13 +19,25 @@ var (
 		templateAbsPath("EmailValidation.html")))
 )
 
+type TemplateBase struct {
+	Errors map[string]string
+}
+
 type TemplateUserInfo struct {
+	TemplateBase
 	Username string
 	Password string
 	Email    string
 }
 
+func NewTemplateUserInfo() *TemplateUserInfo {
+	var info TemplateUserInfo
+	info.Errors = make(map[string]string)
+	return &info
+}
+
 type TemplateEmailValidation struct {
+	TemplateBase
 	Name string
 	Link string
 }
