@@ -62,7 +62,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		user, err := storage.UserByNameAndPassword(userInfo.Username, crypt(userInfo.Password))
 		if err != nil {
 			userInfo.Errors["common"] = "Invalid username or password"
-			storage.AddRequest(userInfo.Username, r.RemoteAddr)
+			err = storage.AddRequest(userInfo.Username, r.RemoteAddr)
+			if err != nil {
+				log.Println("Error in add request: ", err)
+			}
 			return
 		}
 

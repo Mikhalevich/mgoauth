@@ -160,6 +160,7 @@ func (self *Storage) AddRequest(name, remoteAddr string) error {
 	request := LoginRequest{}
 	if err := self.cLoginRequest().Find(bson.M{"name": name, "remote_addr": remoteAddr}).One(&request); err == nil {
 		// request exists
+		request.Id = ""
 		request.LastRequest = time.Now().Unix()
 		request.Count = request.Count + 1
 
