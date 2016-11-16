@@ -200,6 +200,7 @@ func (self *Storage) ClearRequests() error {
 }
 
 func (self *Storage) ResetRequestCounter(request LoginRequest) error {
+	request.Id = ""
 	request.Count = 1
 	return self.cLoginRequest().Update(bson.M{"name": request.UserName, "remote_addr": request.RemoteAddr}, request)
 }
