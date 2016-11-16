@@ -1,7 +1,6 @@
 package mgoauth
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -31,11 +30,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		userInfo.Password = r.FormValue("password")
 
 		if userInfo.Username == "" {
-			userInfo.Errors["name"] = fmt.Sprintf("Please enter username to login")
+			userInfo.AddError("name", "Please enter username to login")
 		}
 
 		if userInfo.Password == "" {
-			userInfo.Errors["password"] = fmt.Sprintf("Please enter password to login")
+			userInfo.AddError("password", "Please enter password to login")
 		}
 
 		if len(userInfo.Errors) > 0 {
@@ -55,7 +54,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 				if allowed {
 					storage.ResetRequestCounter(loginRequest)
 				} else {
-					userInfo.Errors["common"] = fmt.Sprintf("Request is not allowed, please wait %d seconds", LoginRequestWaitingPeriod)
+					userInfo.AddError("common", "Request is not allowed, please wait %d seconds", LoginRequestWaitingPeriod)
 					return
 				}
 			}
@@ -63,7 +62,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 		user, err := storage.UserByNameAndPassword(userInfo.Username, crypt(userInfo.Password))
 		if err != nil {
-			userInfo.Errors["common"] = "Invalid username or password"
+			userInfo.AddError("common", "Invalid username or password")
 			err = storage.AddRequest(userInfo.Username, userHost)
 			if err != nil {
 				log.Println("Error in add request: ", err)
@@ -88,7 +87,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		currentTime := time.Now().Unix()
 		err = storage.UpdateLoginInfo(user.Id, currentTime, sessionId, currentTime+SessionExpirePeriod)
 		if err != nil {
-			userInfo.Errors["common"] = "Internal server error, please try again later"
+			userInfo.AddError("common", "Internal server error, please try again later")
 			log.Println("Unable to update last login info", err)
 		} else {
 			renderTemplate = false

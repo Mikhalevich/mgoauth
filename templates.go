@@ -1,6 +1,7 @@
 package mgoauth
 
 import (
+	"fmt"
 	"html/template"
 	"path"
 	"runtime"
@@ -21,6 +22,10 @@ var (
 
 type TemplateBase struct {
 	Errors map[string]string
+}
+
+func (self *TemplateBase) AddError(name string, errorValue string, params ...interface{}) {
+	self.Errors[name] = fmt.Sprintf(errorValue, params...)
 }
 
 type TemplateUserInfo struct {
