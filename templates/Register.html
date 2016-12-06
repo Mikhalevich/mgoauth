@@ -15,3 +15,4 @@
 		<button type="submit">Register</button>
 	</fieldset>
 </form>
+{{range $key, $value := .Errors}} <p>{{$value}}</p> {{end}}

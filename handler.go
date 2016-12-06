@@ -99,7 +99,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	var userInfo TemplateUserInfo
+	userInfo := NewTemplateUserInfo()
 	renderTemplate := true
 
 	defer func() {
@@ -144,7 +144,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 		err := storage.AddUser(user)
 		if err != nil {
-			log.Println("Unable to add user: ", err)
+			userInfo.AddError("common", "User with this name exists already")
 			return
 		}
 
@@ -152,6 +152,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			err = sendRegistrationMail(userInfo.Username, userInfo.Email, activationCode)
 			if err != nil {
 				log.Println(err)
+				userInfo.AddError("common", "Internal server error, please try again later")
 			} else {
 				renderTemplate = false
 				// todo: redirect to notification about sending mail page
