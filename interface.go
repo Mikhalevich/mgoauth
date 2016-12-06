@@ -10,9 +10,9 @@ import (
 
 const (
 	UrlBase                = "http://localhost:8080"
-	UrlRootPage            = "/"
-	UrlLoginPage           = "/login"
-	UrlRegisterPage        = "/register"
+	UrlRootPage            = UrlBase + "/"
+	UrlLoginPage           = UrlBase + "/login"
+	UrlRegisterPage        = UrlBase + "/register"
 	UrlEmailValidationPage = UrlBase + "/validation"
 
 	UseEmailValidation = true
