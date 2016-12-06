@@ -152,7 +152,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			err = sendRegistrationMail(userInfo.Username, userInfo.Email, activationCode)
 			if err != nil {
 				log.Println(err)
-				userInfo.AddError("common", "Internal server error, please try again later")
+				userInfo.AddError("common", "Internal server error, can't send email to %s", userInfo.Email)
 			} else {
 				renderTemplate = false
 				// todo: redirect to notification about sending mail page
